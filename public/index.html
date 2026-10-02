@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pi · Skill 管理</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="i-library" viewBox="0 0 24 24"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="16" rx="1"/><path d="m17 5 3-1 4 15-3 1z"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.3.9-4.5 4.4 1.1 6.2-5.7-3-5.7 3 1.1-6.2L3.2 9.6l6.3-.9z"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7V5a1 1 0 0 1 1-1h5l3 3h8a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M3 8h18"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m12 3 10 17H2zM12 9v5M12 17h.01"/></symbol>
+    <symbol id="i-view" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M8 10h13"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19C1 8 11 3 21 3c0 10-5 20-16 16ZM5 19l10-10"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M4 3h16v13l-5 5H4zM15 21v-5h5M8 8h8M8 12h6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+  </defs></svg>
+  <div id="app" class="app" data-scene="list">
+  <header class="app-header">
+    <div class="brand"><span class="logo">π</span><div><h1>Skill 管理</h1><p>自己的技能，随手整理。</p></div></div>
+    <div class="breadcrumb"><button id="ui-nav-toggle" class="icon-button nav-toggle" aria-label="打开导航" aria-controls="ui-sidebar" aria-expanded="false"><svg class="icon"><use href="#i-menu"/></svg></button><span id="context">本地 · 个人全局</span></div>
+    <div class="header-right"><button id="refresh" class="secondary">刷新列表</button><button id="new-skill" class="primary">＋ 新建 Skill</button></div>
+  </header>
+  <div id="deletion-result" class="deletion-result" role="status" hidden><span id="deleted-summary"></span><code id="deleted-path"></code><button id="copy-deleted-path" class="small secondary">复制备份路径</button><span>可在「回收站」恢复原位置；遇到同名 Skill 或已有文件，不会覆盖。</span><button id="ui-receipt-close" class="text-button">收起回执</button></div>
+  <main class="workspace">
+    <button id="ui-nav-scrim" class="nav-scrim" aria-label="关闭导航" tabindex="-1" hidden></button>
+    <nav id="ui-sidebar" class="sidebar" aria-label="Skill 导航">
+      <div class="mobile-nav-heading"><strong>我的资料库</strong><button id="ui-nav-close" class="icon-button" aria-label="关闭导航">×</button></div>
+      <p class="sidebar-context"><span class="local-dot"></span><span id="ui-scope-note">个人资料库</span></p>
+      <button class="nav-item" data-ui-filter="all"><svg class="icon"><use href="#i-library"/></svg><span>全部 Skills</span><span id="ui-count-all" class="nav-count"></span></button>
+      <button class="nav-item" data-ui-filter="favorites"><svg class="icon"><use href="#i-star"/></svg><span>收藏</span><span id="ui-count-favorites" class="nav-count"></span></button>
+      <button class="nav-item" data-ui-filter="issues"><svg class="icon"><use href="#i-alert"/></svg><span>需注意</span><span id="ui-count-issues" class="nav-count"></span></button>
+      <div class="nav-section-heading"><h2>分组</h2><button id="group-rename-open" class="icon-button" aria-label="重命名已有分组" title="重命名分组" disabled>✎</button></div><div id="ui-group-nav"></div><p id="group-rename-receipt" class="aside-foot search-status" role="status" hidden></p>
+      <div class="nav-section-heading"><h2>常用视图</h2><button id="view-new" class="icon-button" aria-label="保存当前筛选视图">＋</button></div>
+      <div id="ui-view-nav"></div><div class="saved-view-row"><select id="saved-view" aria-label="常用筛选视图"><option value="">当前自定义筛选</option></select><div><button id="view-edit" class="text-button">更新</button><button id="view-delete" class="text-button danger">删除</button></div><span id="view-status" role="status"></span></div>
+      <div class="sidebar-bottom"><button id="trash-open" class="nav-item"><svg class="icon"><use href="#i-trash"/></svg><span>回收站</span></button><button id="organization-backup-open" class="nav-item"><svg class="icon"><use href="#i-download"/></svg><span>整理备份…</span></button><details id="diagnostics" class="diagnostics"><summary>加载提醒 <span id="warning-count"></span></summary><div id="warnings"></div></details><div class="aside-foot">只在本机，安心整理。<br>开关不改文件，删除可恢复。</div></div>
+    </nav>
+    <aside id="ui-library" class="library">
+      <div class="list-heading"><div><h2 id="ui-list-title">全部 Skills</h2><p>收藏优先，让常用的先被看见。</p></div><span id="total" class="count">…</span></div>
+      <div class="library-tools">
+      <label class="search"><span>⌕</span><input id="search" type="search" placeholder="搜索名称、描述或路径" aria-label="搜索 Skill"></label>
+      <div class="list-controls"><details id="ui-filter-details"><summary class="text-button">☷ 筛选 <span id="ui-filter-count"></span></summary><div class="filter-panel"><div class="section-heading"><strong>组合筛选</strong><button id="ui-reset-filters" class="text-button">重置</button></div><div class="search-options"><label><input id="search-body" type="checkbox"> 搜索正文</label></div><div class="organize-filters"><label>分组<select id="group-filter" aria-label="按分组筛选"><option value="">所有分组</option></select></label><label>标签<select id="tag-filter" aria-label="按标签筛选"><option value="">所有标签</option></select></label><label>备注<select id="notes-filter" aria-label="按备注筛选"><option value="all">不限</option><option value="present">有备注</option><option value="none">无备注</option></select></label></div></div></details><select id="sort-order" aria-label="列表排序"><option value="favorite">收藏优先</option><option value="modified">最近修改</option><option value="added">最近添加</option><option value="name">名称排序</option></select></div>
+      <span id="search-status" class="search-status" role="status"></span><div id="ui-active-filters" class="active-filters" hidden></div>
+      <div class="filters" aria-label="状态筛选">
+        <button class="filter active" data-filter="all">全部</button><button class="filter" data-filter="enabled">已开启</button><button class="filter" data-filter="disabled">已关闭</button><button class="filter" data-filter="issues">需注意</button><button class="filter" data-filter="favorites">收藏</button>
+      </div>
+      <div id="summary" class="summary"></div>
+      <div class="selection-tools"><button id="select-visible" class="text-button">选中当前结果</button><button id="clear-selection" class="text-button">清空选择</button></div></div>
+      <div id="list" class="skill-list" aria-label="Skill 列表"></div>
+      <div class="library-foot"><span id="ui-result-count"></span><button id="import-skill" class="text-button">导入 ZIP</button></div>
+    </aside>
+    <section id="empty" class="empty"><div class="empty-icon">✳</div><h2>选一个 Skill，看看里面。</h2><p>左侧可以开关，右侧可以直接编辑原文件。</p></section>
+    <section id="detail" class="detail" hidden>
+      <div class="detail-heading"><button id="ui-back" class="icon-button back-to-list" aria-label="返回 Skill 列表">←</button><div class="skill-monogram"><svg class="icon"><use href="#i-leaf"/></svg></div><div class="detail-title"><div id="source" class="eyebrow"></div><h2 id="skill-name"></h2></div><div class="detail-actions"><button id="ui-detail-favorite" class="icon-button" aria-label="收藏当前 Skill" aria-pressed="false">☆</button><button id="ui-detail-toggle" class="status-switch" role="switch" aria-checked="false"><span id="state" class="badge"></span><span class="switch-track"></span></button><details id="ui-more-menu"><summary class="icon-button" aria-label="更多 Skill 操作"><svg class="icon"><use href="#i-more"/></svg></summary><div class="menu-panel"><button id="duplicate-skill">复制为新 Skill</button><button id="open-folder">打开所在文件夹</button><button id="export-skill">导出 ZIP</button><hr><button id="delete-skill" class="danger">删除 Skill…</button><p id="delete-reason" class="delete-reason" hidden></p></div></details></div></div>
+      <p id="description" class="description"></p>
+      <p id="package-warning" class="package-warning" hidden>这是扩展包里的 Skill。直接编辑可以，但更新扩展包时可能被覆盖；每次保存会先备份。</p><p id="skill-warning" class="package-warning" hidden></p>
+      <div class="detail-tabs" role="tablist" aria-label="Skill 内容视图"><button id="ui-tab-overview" role="tab" aria-selected="true" aria-controls="ui-panel-overview" data-ui-panel="overview">概览</button><button id="ui-tab-source" role="tab" aria-selected="false" aria-controls="ui-panel-source" data-ui-panel="source" tabindex="-1">原文</button><button id="ui-tab-attachments" role="tab" aria-selected="false" aria-controls="ui-panel-attachments" data-ui-panel="attachments" tabindex="-1">附件</button><button id="ui-tab-history" role="tab" aria-selected="false" aria-controls="ui-panel-history" data-ui-panel="history" tabindex="-1">历史</button></div>
+      <div class="detail-scroll">
+        <section id="ui-panel-overview" class="overview tab-panel" role="tabpanel" aria-labelledby="ui-tab-overview"><div class="overview-main"><article class="intro-card"><span class="section-caption">什么时候用</span><h3>用途与说明</h3><p id="ui-purpose"></p><div class="organization-row"><span id="organization-summary"></span></div><div class="soft-note">完整指令保存在 SKILL.md。编辑前可以先看原文，保存前会校验并备份。</div></article><section class="file-info"><div class="section-heading"><h3>文件信息</h3><button id="copy-path" class="text-button">复制路径</button></div><div class="path-box"><code id="file-path"></code></div><p id="ui-file-time"></p></section></div><div class="overview-side"><section class="note-card"><div class="section-heading"><h3><svg class="icon"><use href="#i-note"/></svg>个人备注</h3><button id="note-open" class="text-button">编辑</button></div><p id="note-summary" class="note-summary" hidden></p><p id="ui-note-empty">还没有备注，可以记下自己的用途和提醒。</p><span class="card-footnote">写给自己，不放进 Skill 正文。</span></section><section class="loading-card"><div class="section-heading"><h3><svg class="icon"><use href="#i-check"/></svg>加载情况</h3></div><p id="ui-loading-status"></p><button id="loading-open" class="text-button">查看加载原因 →</button><span class="card-footnote">当前管理范围的原生解析，非会话遥测。</span></section><button id="organize-skill" class="organization-button">整理分组与标签 →</button><button id="attachments-open" class="text-button">附件另窗浏览 ↗</button></div></section>
+        <section id="ui-panel-source" class="source-panel tab-panel" role="tabpanel" aria-labelledby="ui-tab-source" hidden><div class="editor-toolbar"><div class="tabs"><button id="edit-tab" class="tab active">编辑原文</button><button id="preview-tab" class="tab">预览</button><button id="compare-draft" class="tab">修改对比</button></div><span id="dirty" class="dirty">未修改</span></div><textarea id="editor" spellcheck="false" aria-label="SKILL.md 编辑器"></textarea><div id="preview" class="preview" hidden></div></section>
+        <section id="ui-panel-attachments" class="tab-panel" role="tabpanel" aria-labelledby="ui-tab-attachments" hidden><div class="panel-heading"><h3>配套文件 · 只读</h3><p>不运行脚本，不渲染 HTML，不加载外链。</p><button id="ui-attachments-refresh" class="secondary">刷新附件</button></div><p id="ui-attachments-status" role="status"></p><div id="ui-inline-attachments"></div></section>
+        <section id="ui-panel-history" class="tab-panel" role="tabpanel" aria-labelledby="ui-tab-history" hidden><div class="panel-heading"><h3>历史备份</h3><p>每次保存前，留一份原来的内容。</p></div><details class="backups"><summary>历史备份 <span id="backup-count"></span></summary><div class="restore-row"><select id="backup-select" aria-label="选择历史备份"></select><button id="backup-compare" class="secondary" disabled>对比当前版本</button><button id="restore" class="secondary" disabled>恢复所选备份</button></div><p id="backup-path"></p><p>恢复前也会备份当前文件。开关配置的备份保存在同一备份根目录中。</p></details></section>
+      </div>
+      <div class="editor-foot"><span>保留 YAML 和全部元数据 · 保存前校验 · 自动备份</span><div id="ui-editor-actions" hidden><button id="discard" class="secondary" disabled>撤销未保存修改</button><button id="save" class="primary" disabled>保存修改</button></div><button id="ui-read-source" class="secondary">查看原文 →</button></div>
+    </section>
+  </main>
+  <div id="ui-batch-bar" class="batch-toolbar" hidden><div><span id="selection-count">已选 0</span></div><div><button id="batch-enable" class="small secondary" disabled>批量开启</button><button id="batch-disable" class="small secondary" disabled>批量关闭</button><button id="batch-export" class="small secondary" disabled>多选导出 ZIP</button><button id="batch-organize" class="small secondary" disabled>批量分组／标签</button><button id="ui-batch-close" class="icon-button" aria-label="清空选择并关闭批量条">×</button></div></div>
+  <div class="notice"><span>↻</span><span>Skill 内容或开关修改后，在 Pi 输入 <code>/reload</code>。整理信息不改变加载。</span><span id="changed" hidden>有新修改，记得重新加载。</span></div>
+  </div>
+  <dialog id="create-dialog" aria-labelledby="create-title">
+    <div class="detail-top"><h2 id="create-title">新建 Skill</h2><button id="create-cancel" class="secondary">取消</button></div>
+    <p>把在别处写好的完整 <code>SKILL.md</code> 粘贴到下面。不接 API，也不会改写你的内容。</p>
+    <label class="create-scope">保存范围 <select id="create-scope"><option value="global">个人全局</option><option id="create-project-option" value="project" hidden disabled>当前项目</option></select></label>
+    <p class="create-location">保存位置 <code id="create-location"></code>。目录名取自 YAML 的 <code>name</code>，同名时不覆盖。</p>
+    <label for="create-content">完整 Skill 内容（包含开头的 YAML）</label>
+    <textarea id="create-content" spellcheck="false" placeholder="---&#10;name: my-skill&#10;description: &quot;什么时候使用这个 Skill&quot;&#10;---&#10;&#10;# 我的 Skill&#10;&#10;这里是指令正文。"></textarea>
+    <p id="create-error" role="alert" hidden></p>
+    <div class="create-footer"><button id="create-template" class="secondary">填入基础模板</button><button id="create-submit" class="primary" disabled>创建 Skill</button></div>
+    <p class="create-note">只创建这一个文件。若正文引用 references、scripts 或 assets，需另外把这些文件放进 Skill 目录。</p>
+  </dialog>
+  <dialog id="transfer-dialog" class="transfer-dialog" aria-labelledby="transfer-title">
+    <div class="detail-top"><h2 id="transfer-title"></h2><button id="transfer-cancel" class="secondary">取消</button></div>
+    <p id="transfer-note"></p>
+    <label id="import-file-label">ZIP 文件 <input id="import-file" type="file" accept=".zip,application/zip"></label>
+    <label>新名称 <input id="transfer-name" type="text" maxlength="64" placeholder="导入时可留空，沿用原 name" autocomplete="off" spellcheck="false"></label>
+    <label>保存范围 <select id="transfer-scope"><option value="global">个人全局</option><option id="transfer-project-option" value="project" hidden disabled>当前项目</option></select></label>
+    <p class="create-location">位置 <code id="transfer-location"></code>。不会覆盖同名 Skill 或已有目录。</p>
+    <p>仅复制文件，不运行脚本，不安装扩展或依赖。导入陌生来源的 Skill 后，请先检查内容再在 Pi 使用。</p>
+    <p>每个文件最多 20 MiB，总大小最多 50 MiB，最多 1000 个文件/目录。符号链接、junction 和不安全路径不接受。复制／导出跳过 .git 与 node_modules。</p>
+    <p id="transfer-error" role="alert" hidden></p>
+    <div class="create-footer"><span></span><button id="transfer-submit" class="primary" disabled></button></div>
+  </dialog>
+  <dialog id="delete-dialog" class="transfer-dialog" aria-labelledby="delete-title">
+    <div class="detail-top"><h2 id="delete-title">删除 Skill（可恢复）</h2><button id="delete-cancel" class="secondary">取消</button></div>
+    <p>将从原位置移除整个 Skill，包含配套文件和隐藏文件。不会永久擦除，不改 Pi 配置和收藏记录。</p>
+    <p>将删除 <strong id="delete-name"></strong></p>
+    <p>原位置 <code id="delete-target"></code></p>
+    <p>完整文件将保存在 <code id="delete-archive"></code> 下的独立目录，可从「回收站」恢复原位置，也保留删除记录供手动核对。</p>
+    <label>完整输入上面的 Skill 名称确认 <input id="delete-confirmation" type="text" autocomplete="off" spellcheck="false"></label>
+    <p id="delete-error" role="alert" hidden></p>
+    <div class="create-footer"><span></span><button id="delete-submit" class="primary danger" disabled>确认删除并保留备份</button></div>
+  </dialog>
+  <dialog id="trash-dialog" class="transfer-dialog wide-dialog" aria-labelledby="trash-title">
+    <div class="detail-top"><h2 id="trash-title">回收站</h2><div><button id="trash-refresh" class="secondary">刷新</button><button id="trash-purge" class="secondary danger">清空回收站…</button><button id="trash-close" class="secondary">关闭</button></div></div>
+    <p>只显示当前管理范围的删除备份。恢复整个目录及隐藏文件，不改 Pi 配置；原位置已存在或有同名 Skill 时拒绝覆盖。清空会直接永久删除经校验的归档，不进入系统回收站，不可恢复；异常、链接或正在使用的归档会保留。</p>
+    <div id="trash-warnings" role="status"></div><div id="trash-items"></div>
+  </dialog>
+  <dialog id="purge-dialog" class="transfer-dialog wide-dialog" aria-labelledby="purge-title">
+    <div class="detail-top"><h2 id="purge-title">永久清空回收站</h2><button id="purge-cancel" class="secondary">取消</button></div>
+    <p class="issue">以下归档中的全部文件、隐藏文件和残留删除记录将直接删除，不进入系统回收站，无法撤销。已恢复的原文件、Pi 配置、收藏和分组不会删除。这不是安全擦盘。</p>
+    <p id="purge-summary"></p><div id="purge-items"></div><div id="purge-warnings" role="status"></div>
+    <label><span id="purge-confirmation-label">输入「永久清空回收站」确认</span><input id="purge-confirmation" type="text" autocomplete="off" spellcheck="false"></label>
+    <p id="purge-error" role="alert" hidden></p>
+    <div class="create-footer"><span>确认后立即删除，不能恢复。</span><button id="purge-submit" class="primary danger" disabled>永久删除以上归档</button></div>
+  </dialog>
+  <dialog id="organize-dialog" class="transfer-dialog" aria-labelledby="organize-title">
+    <div class="detail-top"><h2 id="organize-title">分组／标签</h2><button id="organize-cancel" class="secondary">取消</button></div>
+    <p>只保存在管理器偏好中，不改 Skill 原文、Pi 配置或加载顺序。</p>
+    <label>分组（可留空，最多 60 字符）<input id="organize-group" type="text" maxlength="60" list="known-groups" autocomplete="off"></label><datalist id="known-groups"></datalist>
+    <label>标签（逗号分隔，最多 20 个，每个 32 字符）<input id="organize-tags" type="text" maxlength="900" autocomplete="off"></label>
+    <p id="organize-error" role="alert" hidden></p><div class="create-footer"><span></span><button id="organize-submit" class="primary">保存分组和标签</button></div>
+  </dialog>
+  <dialog id="attachments-dialog" class="transfer-dialog wide-dialog" aria-labelledby="attachments-title">
+    <div class="detail-top"><h2 id="attachments-title">附件只读浏览</h2><div><button id="attachments-refresh" class="secondary">刷新</button><button id="attachments-close" class="secondary">关闭</button></div></div>
+    <div id="attachments-body"><p id="attachments-note"></p><div id="attachments-warnings" role="status"></div>
+    <div class="attachments-layout"><div id="attachments-tree" class="attachments-tree"></div><section><p id="attachment-info"></p><pre id="attachment-content" class="attachment-content"></pre></section></div></div>
+  </dialog>
+  <dialog id="note-dialog" class="transfer-dialog" aria-labelledby="note-title">
+    <div class="detail-top"><h2 id="note-title">个人备注</h2><button id="note-cancel" class="secondary">取消</button></div>
+    <p>只记录在管理器偏好，不混入 Skill 正文，不改变 Pi。最多 10000 字符，可换行；留空保存可清除。</p>
+    <textarea id="note-content" maxlength="10000" rows="10" spellcheck="false" aria-label="个人备注"></textarea><p id="note-error" role="alert" hidden></p>
+    <div class="create-footer"><span></span><button id="note-submit" class="primary">保存备注</button></div>
+  </dialog>
+  <dialog id="batch-organize-dialog" class="transfer-dialog wide-dialog" aria-labelledby="batch-organize-title">
+    <div class="detail-top"><h2 id="batch-organize-title">批量分组／标签</h2><button id="batch-organize-cancel" class="secondary">取消</button></div>
+    <p id="batch-organize-summary"></p><div id="batch-organize-items"></div>
+    <label>分组方式<select id="batch-group-mode"><option value="keep">保持各自原分组</option><option value="set">统一设置（留空可清除）</option></select></label>
+    <label>分组<input id="batch-group" maxlength="60" list="known-groups" autocomplete="off"></label>
+    <label>标签方式<select id="batch-tag-mode"><option value="keep">保持各自原标签</option><option value="add">追加标签</option><option value="remove">移除指定标签</option><option value="replace">替换全部标签（留空可清除）</option></select></label>
+    <label>标签（逗号分隔）<input id="batch-tags" maxlength="900" autocomplete="off"></label>
+    <p>最多 100 个 Skill，只改管理器偏好。不改文件、开关和个人备注。一次保存整批，任意项无效或追加后超过 20 个标签则全部拒绝。</p>
+    <p id="batch-organize-error" role="alert" hidden></p><div class="create-footer"><span></span><button id="batch-organize-submit" class="primary" disabled>确认保存所选分组／标签</button></div>
+  </dialog>
+  <dialog id="diff-dialog" class="transfer-dialog wide-dialog" aria-labelledby="diff-title">
+    <div class="detail-top"><h2 id="diff-title">修改对比</h2><button id="diff-close" class="secondary">关闭</button></div>
+    <p id="diff-description"></p><p id="diff-summary" role="status"></p><div id="diff-content" class="diff-content"></div>
+    <p>仅展示差异，不会保存或恢复文件。展示统一按 LF 比较，绿色＋为新增，红色−为删除；末尾换行仍参与比较。</p>
+  </dialog>
+  <dialog id="loading-dialog" class="transfer-dialog wide-dialog" aria-labelledby="loading-title">
+    <div class="detail-top"><h2 id="loading-title">加载原因诊断</h2><button id="loading-close" class="secondary">关闭</button></div><div id="loading-content"></div>
+  </dialog>
+  <dialog id="organization-backup-dialog" class="transfer-dialog wide-dialog" aria-labelledby="organization-backup-title">
+    <div class="detail-top"><h2 id="organization-backup-title">整理信息备份／恢复</h2><button id="organization-backup-cancel" class="secondary">取消</button></div>
+    <p>只备份收藏、分组、标签、备注和常用视图。包含路径与私人备注，请妥善保存；不含 Skill 正文、添加时间、Pi 配置或凭证。</p>
+    <button id="organization-backup-export" class="secondary">导出整理信息 JSON</button>
+    <label>导入 JSON（最多 1 MiB）<input id="organization-backup-file" type="file" accept=".json,application/json"></label>
+    <label>导入方式<select id="organization-backup-mode"><option value="merge">合并：追加收藏／标签，仅补空分组／备注，保留现有视图</option><option value="replace">覆盖匹配项：按备份设置四项，未匹配项及其余偏好不动</option></select></label>
+    <p>只按原位置 ID 匹配，不按名称猜测；换机器／移动目录后可能无法匹配，预览中会明确跳过。视图同名不同 ID 不覆盖。</p>
+    <button id="organization-backup-preview" class="secondary" disabled>预览匹配与变更</button><div id="organization-backup-results"></div><p id="organization-backup-error" role="alert" hidden></p>
+    <div class="create-footer"><span>改文件／方式须重新预览；取消不保存。</span><button id="organization-backup-submit" class="primary" disabled>确认保存预览中的整理信息</button></div>
+  </dialog>
+  <dialog id="group-rename-dialog" class="transfer-dialog" aria-labelledby="group-rename-title">
+    <div class="detail-top"><h2 id="group-rename-title">重命名分组</h2><button id="group-rename-cancel" class="secondary">取消</button></div>
+    <p>只改名称，成员、标签、备注、收藏及 Skill 原文不变。同一分组中暂未发现的记录也同步改名；引用它的常用视图同步更新，视图名称与其他条件不变。不合并已有分组，也不覆盖已有名称引用。</p>
+    <label>已有分组<select id="group-rename-from" aria-label="要改名的分组"></select></label>
+    <label>新名称<input id="group-rename-name" maxlength="60" autocomplete="off" spellcheck="false"></label>
+    <p id="group-rename-summary"></p><p id="group-rename-error" class="issue" role="alert" hidden></p>
+    <div class="create-footer"><span>最多 60 字符，空名称或未修改不能保存。</span><button id="group-rename-submit" class="primary" disabled>保存新名称</button></div>
+  </dialog>
+  <dialog id="view-dialog" class="transfer-dialog" aria-labelledby="view-title">
+    <div class="detail-top"><h2 id="view-title">保存常用筛选视图</h2><button id="view-cancel" class="secondary">取消</button></div>
+    <p>保存当前关键词、正文搜索开关、状态、分组、标签、备注条件和排序。只改变网页列表，不改变 Pi 加载，也不会提交主编辑器草稿。最多 30 个。</p>
+    <label>视图名称<input id="view-name" maxlength="60" autocomplete="off"></label><pre id="view-filters" class="view-filters"></pre><p id="view-error" role="alert" hidden></p>
+    <div class="create-footer"><span></span><button id="view-submit" class="primary" disabled>保存视图</button></div>
+  </dialog>
+  <div id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "personal-pi-skill-manager",
+  "version": "1.0.0",
+  "description": "Local-only personal Pi Skill manager",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/check-env.mjs && node server.mjs",
+    "check": "node scripts/check-env.mjs",
+    "test": "node --test test/*.test.mjs",
+    "test:browser": "node scripts/test-browsers.mjs"
+  },
+  "engines": {
+    "node": ">=22.19"
+  },
+  "dependencies": {
+    "yauzl": "3.4.0",
+    "yazl": "3.3.1"
+  }
+}

@@ -1,0 +1,28 @@
+name: Node tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install fixed external Pi SDK (no install scripts)
+        run: npm install --global --ignore-scripts @earendil-works/pi-coding-agent@1.0.0
+      - name: Locate Pi SDK
+        shell: pwsh
+        run: |
+          $root = npm root -g
+          "PI_PACKAGE_DIR=$(Join-Path $root '@earendil-works/pi-coding-agent')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - run: npm test
